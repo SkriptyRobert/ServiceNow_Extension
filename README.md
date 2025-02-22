@@ -78,7 +78,6 @@ The extension requires the following permissions:
 
 ## Copyright
 
-/*
  * Developed by BertSoftwares
  * Author: Robert Pesout
  * Contact: robert.pesout@gmail.com
@@ -91,11 +90,13 @@ The extension requires the following permissions:
  * by other parties is not permitted without explicit permission from
  * Robert Pesout (BertSoftwares).
  *
- * This program is free to use software for TietoEvry: you can redistribute it
+ * This program is free to use for TietoEvry: you can redistribute it
  * and/or modify it under the terms of the GPL-3.0 License.
  *
  * The program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See <https://www.gnu.org/licenses/> for more details.
- */
+ *
+ * ⚖️ I reserve the right to make changes, updates, or modifications to this 
+ * program and its licensing terms at any time without prior notice.
