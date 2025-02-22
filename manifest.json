@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "ServiceNow Queue Monitor",
+  "version": "1.0",
+  "description": "Monitoruje ServiceNow queue a upozorňuje na nové tikety",
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.service-now.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://*.service-now.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": [
+      "sounds/*.mp3",
+      "audio.html",
+      "audio.js"
+    ],
+    "matches": ["<all_urls>"]
+  }],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "192": "icons/icon192.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "192": "icons/icon192.png"
+  }
+} 

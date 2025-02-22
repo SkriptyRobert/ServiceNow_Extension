@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ServiceNow Queue Monitor</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 15px;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(to bottom, #3949AB, #1E88E5);
+      position: relative;
+      overflow: hidden;
+      min-height: 450px;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        radial-gradient(2px 2px at 20px 30px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 40px 70px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 50px 160px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 90px 40px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 130px 80px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 160px 120px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 200px 20px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 240px 60px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 280px 100px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 300px 140px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 20px 200px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 60px 240px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 100px 280px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 140px 320px, #E3F2FD, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 180px 360px, #E3F2FD, rgba(0,0,0,0));
+      background-repeat: repeat;
+      animation: stars 15s linear infinite;
+      opacity: 0.4;
+    }
+
+    @keyframes stars {
+      from {
+        transform: translateY(0);
+      }
+      to {
+        transform: translateY(-100px);
+      }
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .form-group h2 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: #1565C0;
+      font-weight: bold;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #1976D2;
+    }
+
+    input[type="text"], input[type="file"], select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #90CAF9;
+      border-radius: 4px;
+      box-sizing: border-box;
+      background-color: white;
+    }
+
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%231565C0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 30px;
+    }
+
+    select:hover {
+      border-color: #1976D2;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #1565C0;
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+    }
+
+    button {
+      width: 100%;
+      background-color: #1976D2;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-bottom: 10px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    button:hover::after {
+      opacity: 1;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    #header {
+      font-size: 18px;
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #1976D2;
+      margin-top: 5px;
+    }
+
+    #saveSettings {
+      background-color: #43A047;
+      margin-top: 20px;
+      margin-bottom: 15px;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 14px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #saveSettings:hover {
+      background-color: #388E3C;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transform: translateY(-1px);
+    }
+
+    #saveSettings:active {
+      background-color: #2E7D32;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      transform: translateY(1px);
+    }
+
+    #saveSettings::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform 0.3s ease-out;
+    }
+
+    #saveSettings:hover::before {
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .custom-sound-container {
+      margin-top: 10px;
+      display: none;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.9);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin-top: 10px;
+      line-height: 1.4;
+      position: relative;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .footer a {
+      color: #E3F2FD;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">ServiceNow Queue Monitor</div>
+  
+  <div class="form-group">
+    <h2>Monitoring Settings</h2>
+    <label for="url">Monitoring URL must contain /task_list.do?</label>
+    <input type="text" id="url" placeholder="Enter ServiceNow filter URL">
+    <div class="hint">Example: https://instance.service-now.com/task_list.do?sysparm_query=...</div>
+  </div>
+
+  <div class="form-group">
+    <h2>Notification Sound</h2>
+    <select id="soundSelect" name="sound">
+      <option value="default.mp3">Default Sound</option>
+      <option value="bell.mp3">Bell</option>
+      <option value="notification.mp3">Notification</option>
+      <option value="custom">Custom Sound</option>
+    </select>
+    <div class="custom-sound-container" id="customSoundContainer">
+      <input type="file" id="customSound" accept=".mp3">
+    </div>
+    <button id="testSound">Test Sound</button>
+  </div>
+
+  <button id="saveSettings">Save Settings</button>
+
+  <div class="footer">
+    Developed by © 2024 BertSoftwares | Version 1.0<br>
+    <a href="mailto:robert.pesout@tietoevry.com">robert.pesout@tietoevry.com</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html> 
