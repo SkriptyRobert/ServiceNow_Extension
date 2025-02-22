@@ -91,7 +91,7 @@ The extension requires the following permissions:
  * by other parties is not permitted without explicit permission from
  * Robert Pesout (BertSoftwares).
  *
- *** This program is free to use software for TietoEvry**: you can redistribute it
+ * This program is free to use software for TietoEvry: you can redistribute it
  * and/or modify it under the terms of the GPL-3.0 License.
  *
  * The program is distributed in the hope that it will be useful,
