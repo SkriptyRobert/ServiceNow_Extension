@@ -145,12 +145,12 @@ function getListObject() {
     return null;
 }
 
-// Nová funkce pro získání GlideList2 objektu
+// funkce GlideList2 objektu
 function getGlideList2() {
     const context = getServiceNowContext();
     try {
         if (context.GlideList2) {
-            // Zkusíme najít ID seznamu různými způsoby
+            //ID seznamu různými způsoby
             const listId = context.document.querySelector('[data-list_id]')?.getAttribute('data-list_id') ||
                           context.document.querySelector('.list_div')?.getAttribute('id') ||
                           context.document.querySelector('div[data-type="list2_container"]')?.getAttribute('id');
@@ -159,7 +159,7 @@ function getGlideList2() {
                 return context.GlideList2.get(listId);
             }
             
-            // Pokud nemáme ID, zkusíme najít první instanci
+            // ID or zkusíme najít první instanci
             const lists = context.GlideList2.getAll();
             if (lists && lists.length > 0) {
                 return lists[0];
@@ -196,11 +196,11 @@ function isExtensionContextValid() {
     }
 }
 
-// Zjednodušená funkce pro aktualizaci dat
+// funkce pro aktualizaci dat
 async function refreshListData() {
     const context = getServiceNowContext();
     try {
-        // Použijeme GlideList2, pokud je dostupný
+        // GlideList2, pokud je dostupný
         const list2 = getGlideList2();
         if (list2 && typeof list2.refresh === 'function') {
             log('Aktualizuji data pomocí GlideList2');
@@ -208,7 +208,7 @@ async function refreshListData() {
             return true;
         }
 
-        // Pokud GlideList2 není dostupný, použijeme AJAX
+        // GlideList2 není dostupný, použijeme AJAX
         if (context.jQuery) {
             log('Aktualizuji data pomocí AJAX');
             const currentUrl = new URL(context.window.location.href);
@@ -234,7 +234,7 @@ async function refreshListData() {
     }
 }
 
-// Vylepšená funkce pro zpracování změn
+// funkce pro zpracování změn
 function handleChanges() {
     if (!isExtensionContextValid()) {
         error('Neplatný kontext extension');
@@ -268,13 +268,12 @@ function handleChanges() {
     }, 300);
 }
 
-// Vylepšená funkce pro získání tiketů
 function getTickets() {
     const context = getServiceNowContext();
     const tickets = new Set();
     
     try {
-        // Nejprve zkusíme získat data přímo ze seznamu
+        // data přímo ze seznamu
         const list = getListObject();
         if (list) {
             const rows = list.getRows();
@@ -316,7 +315,7 @@ function getTickets() {
     }
 }
 
-// Vylepšená kontrola nových tiketů
+// kontrola nových tiketů
 async function checkForNewTickets(forceRefreshData = false) {
     if (!isExtensionContextValid()) {
         error('Neplatný kontext extension při kontrole tiketů');
@@ -456,7 +455,7 @@ function initializeObserver() {
         }
     });
 
-    // Sledujeme pouze relevantní části DOM
+    // relevantní části DOM
     const tables = context.document.querySelectorAll(CONFIG.SELECTORS.TICKET_TABLE);
     tables.forEach(table => {
         observer.observe(table, {
