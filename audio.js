@@ -1,4 +1,4 @@
-// Vytvoříme AudioContext
+// AudioContext
 let audioContext = null;
 let audioBuffer = null;
 let isInitialized = false;
@@ -70,7 +70,7 @@ async function playSound(soundType, customSoundData = null) {
     }
 }
 
-// Posluchač pro zprávy
+// zprávy
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'playSound') {
         console.log('Audio.js: Received playSound request:', request.soundType);
