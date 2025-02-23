@@ -76,8 +76,6 @@ The extension requires the following permissions:
 - Sound notifications require one-time browser interaction after installation
 - Only MP3 files are supported for custom sounds
 
-## Copyright
-
 ## 📄 Copyright & License
 
 **Developed by:** BertSoftwares  
