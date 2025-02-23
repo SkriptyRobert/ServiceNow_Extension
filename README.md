@@ -2,13 +2,13 @@
 
 Chrome extension for monitoring ServiceNow ticket queue with sound notifications.
 
-## Copyright (C) 2024 BertSoftwares Detailed license see below of this file.
+## Copyright (C) 2025 BertSoftwares Detailed license see below of this file.
 
 Developed by BertSoftwares  
 Contact: robert.pesout@gmail.com  
 GitHub: [https://github.com/SkriptyRobert](https://github.com/SkriptyRobert)
 
-© 2024 BertSoftwares. All rights reserved. 
+© 2025 BertSoftwares. All rights reserved. 
 
 ## Features
 
@@ -83,7 +83,7 @@ The extension requires the following permissions:
  * Contact: robert.pesout@gmail.com
  * GitHub: (https://github.com/SkriptyRobert/ServiceNow_Extension)
  *
- * © 2024 Robert Pesout (BertSoftwares)
+ * © 2025 Robert Pesout (BertSoftwares)
  *
  * This program is licensed under the GNU General Public License v3.0
  * (GPL-3.0) exclusively for TietoEvry. Redistribution or modification
