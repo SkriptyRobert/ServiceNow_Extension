@@ -78,25 +78,16 @@ The extension requires the following permissions:
 
 ## Copyright
 
- * Developed by BertSoftwares
- * Author: Robert Pesout
- * Contact: robert.pesout@gmail.com
- * GitHub: (https://github.com/SkriptyRobert/ServiceNow_Extension)
- *
- * © 2025 Robert Pesout (BertSoftwares)
- *
- * This program is licensed under the GNU General Public License v3.0
- * (GPL-3.0) exclusively for TietoEvry. Redistribution or modification
- * by other parties is not permitted without explicit permission from
- * Robert Pesout (BertSoftwares).
- *
- * This program is free to use for TietoEvry: you can redistribute it
- * and/or modify it under the terms of the GPL-3.0 License.
- *
- * The program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See <https://www.gnu.org/licenses/> for more details.
- *
- * ⚖️ I reserve the right to make changes, updates, or modifications to this 
- * program and its licensing terms at any time without prior notice.
+Developed by BertSoftwares
+Author: Robert Pesout
+Contact: robert.pesout@gmail.com
+GitHub: https://github.com/SkriptyRobert/ServiceNow_Extension
+© 2025 Robert Pesout (BertSoftwares)
+
+This program is licensed under a custom license exclusively for TietoEvry. Redistribution, modification, or use by other parties is not permitted without explicit permission from Robert Pesout (BertSoftwares).
+
+This program is provided free of charge for internal use by TietoEvry. It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+For licensing inquiries or permissions, please contact: robert.pesout@gmail.com.
+
+⚖️ I reserve the right to make changes, updates, or modifications to this program and its licensing terms at any time without prior notice.
