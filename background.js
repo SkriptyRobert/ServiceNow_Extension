@@ -41,7 +41,7 @@ function extractTickets(html) {
             return tickets;
         }
 
-        // Vylepšený regex pattern pro hledání tiketů
+        // regex pattern pro hledání tiketů
         const patterns = [
             // Hledání v tabulce s konkrétní třídou
             /<table[^>]*class="[^"]*list_table[^"]*"[\s\S]*?<\/table>/gi,
@@ -49,7 +49,7 @@ function extractTickets(html) {
             /<div[^>]*class="[^"]*list2_body[^"]*"[\s\S]*?<\/div>/gi
         ];
 
-        // Nejprve najdeme relevantní části HTML
+        // relevantní části HTML
         let relevantHtml = '';
         for (const pattern of patterns) {
             const matches = html.match(pattern);
@@ -58,7 +58,7 @@ function extractTickets(html) {
             }
         }
 
-        // Pokud jsme našli relevantní části, hledáme v nich tikety
+        // relevantní části tikety
         if (relevantHtml) {
             const ticketPattern = /(?:number="((?:INC|TASK|RITM|REQ|FTASK|SCTASK)\d+)"|sys_id="([^"]+)"[^>]*>[\s\S]*?((?:INC|TASK|RITM|REQ|FTASK|SCTASK)\d+))/gi;
             let match;
@@ -81,7 +81,7 @@ function extractTickets(html) {
 // Funkce pro zajištění audio tabu
 async function ensureAudioTab() {
     try {
-        // Nejprve zkontrolujeme všechny existující taby
+        // kontrola existující taby
         const tabs = await chrome.tabs.query({});
         const audioTabs = tabs.filter(tab => tab.url && tab.url.includes('audio.html'));
         
@@ -148,11 +148,11 @@ async function fetchServiceNowData() {
     try {
         console.log('Fetching data from:', monitoredUrl);
         
-        // Add parameters to ensure current data
+        // Add parameters
         const urlWithParams = new URL(monitoredUrl);
         urlWithParams.searchParams.set('sysparm_timestamp', Date.now().toString());
         
-        // Add parameters to get only needed data
+        // get only needed data
         urlWithParams.searchParams.set('sysparm_fields', 'number,sys_id');
         urlWithParams.searchParams.set('sysparm_view', 'list');
         
@@ -212,7 +212,7 @@ async function fetchServiceNowData() {
         lastTicketCount = currentCount;
         lastTicketIds = currentTickets;
         lastCheckTime = Date.now();
-        retryCount = 0; // Reset retry counter on successful fetch
+        retryCount = 0; // Resetcounter on successful fetch
 
     } catch (error) {
         console.error('Error fetching ServiceNow data:', error);
@@ -227,7 +227,7 @@ async function fetchServiceNowData() {
     }
 }
 
-// Pomocná funkce pro získání user tokenu
+// funkce pro získání user tokenu
 async function getUserToken() {
     try {
         const url = new URL(monitoredUrl);
@@ -259,7 +259,7 @@ function startMonitoring() {
     
     // Nastavení intervalu pro pravidelnou kontrolu
     chrome.alarms.create('fetchServiceNowData', {
-        periodInMinutes: 0.1667 // 10 sekund
+        periodInMinutes: 0.1667
     });
 }
 
@@ -298,13 +298,13 @@ chrome.runtime.onInstalled.addListener(async () => {
     await loadSettings();
 });
 
-// Přidáme posluchač pro aktivaci extension
+// posluchač pro aktivaci extension
 chrome.action.onClicked.addListener(() => {
     console.log('Extension activated by click');
     fetchServiceNowData();
 });
 
-// Přidáme posluchač pro zavření audio tabu
+// posluchač pro zavření audio tabu
 chrome.tabs.onRemoved.addListener((tabId) => {
     if (tabId === audioTabId) {
         audioTabId = null;
@@ -362,7 +362,7 @@ chrome.runtime.onStartup.addListener(async () => {
     }
 });
 
-// Přidáme posluchač pro obnovení připojení
+// posluchač pro obnovení připojení
 chrome.runtime.onConnect.addListener(() => {
     console.log('Connection established - checking monitoring status');
     if (!isMonitoring && monitoredUrl) {
