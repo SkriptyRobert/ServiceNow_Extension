@@ -10,6 +10,8 @@ GitHub: [https://github.com/SkriptyRobert](https://github.com/SkriptyRobert)
 
 © 2025 BertSoftwares. All rights reserved. 
 
+> _This extension is an independent project and is not affiliated with or endorsed by ServiceNow._
+
 ## Features
 
 - Real-time monitoring of ServiceNow ticket queue
