@@ -78,16 +78,28 @@ The extension requires the following permissions:
 
 ## Copyright
 
-Developed by BertSoftwares
-Author: Robert Pesout
-Contact: robert.pesout@gmail.com
-GitHub: https://github.com/SkriptyRobert/ServiceNow_Extension
-© 2025 Robert Pesout (BertSoftwares)
+## 📄 Copyright & License
 
-This program is licensed under a custom license exclusively for TietoEvry. Redistribution, modification, or use by other parties is not permitted without explicit permission from Robert Pesout (BertSoftwares).
+**Developed by:** BertSoftwares  
+**Author:** Robert Pesout  
+**Contact:** [robert.pesout@gmail.com](mailto:robert.pesout@gmail.com)  
+**GitHub:** [ServiceNow Extension](https://github.com/SkriptyRobert/ServiceNow_Extension)  
+**© 2025 Robert Pesout (BertSoftwares)**
 
-This program is provided free of charge for internal use by TietoEvry. It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+---
 
-For licensing inquiries or permissions, please contact: robert.pesout@gmail.com.
+### 📋 License Terms
 
-⚖️ I reserve the right to make changes, updates, or modifications to this program and its licensing terms at any time without prior notice.
+This program is licensed under a **custom license** exclusively for **TietoEvry**. Redistribution, modification, or use by other parties is **not permitted** without explicit permission from **Robert Pesout (BertSoftwares)**.
+
+- ✅ **Free to use** internally by **TietoEvry**.
+- ❌ **No redistribution or modification** by third parties without permission.
+- ⚠️ **No warranty**—provided *"as is"* without any guarantees of **merchantability** or **fitness for a particular purpose**.
+
+For licensing inquiries or special permissions, please contact: **[robert.pesout@gmail.com](mailto:robert.pesout@gmail.com)**
+
+---
+
+⚖️ *I reserve the right to make changes, updates, or modifications to this program and its licensing terms at any time without prior notice.*
+
+
