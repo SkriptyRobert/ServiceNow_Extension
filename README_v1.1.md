@@ -122,6 +122,8 @@ For licensing inquiries or special permissions, please contact: **[robert.pesout
 
 ⚖️ *I reserve the right to make changes, updates, or modifications to this program and its licensing terms at any time without prior notice.*
 
+---
+
 ## Version 1.1 Updates and Fixes
 
 ### New Features
