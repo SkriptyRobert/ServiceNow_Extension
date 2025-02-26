@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ServiceNow Queue Monitor - Audio Player</title>
     <style>
         body {
@@ -48,6 +50,12 @@
             margin-top: 20px;
             font-size: 14px;
             color: #bbdefb;
+            transition: all 0.3s ease;
+        }
+
+        .status.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #ff8a80;
         }
 
         #initAudio {
@@ -75,18 +83,51 @@
             color: #90caf9;
             opacity: 0.8;
         }
+
+        .retry-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+            transition: all 0.2s ease;
+        }
+
+        .retry-button:hover {
+            background: #d32f2f;
+            transform: translateY(-1px);
+        }
     </style>
     <script src="audio.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                await initializeAudio();
-                document.getElementById('status').textContent = 'Audio system initialized successfully';
-            } catch (error) {
-                console.error('Failed to initialize AudioContext:', error);
-                document.getElementById('status').textContent = 'Failed to initialize audio system. Please refresh the page.';
-                document.getElementById('status').style.color = '#ff8a80';
+            const statusElement = document.getElementById('status');
+            const retryButton = document.createElement('button');
+            retryButton.className = 'retry-button';
+            retryButton.textContent = 'Retry Initialization';
+            retryButton.style.display = 'none';
+            statusElement.parentNode.insertBefore(retryButton, statusElement.nextSibling);
+
+            async function initAudioSystem() {
+                try {
+                    await initializeAudio();
+                    statusElement.textContent = 'Audio system initialized successfully';
+                    statusElement.classList.remove('error');
+                    retryButton.style.display = 'none';
+                } catch (error) {
+                    console.error('Failed to initialize AudioContext:', error);
+                    statusElement.textContent = 'Failed to initialize audio system. Please try again.';
+                    statusElement.classList.add('error');
+                    retryButton.style.display = 'block';
+                }
             }
+
+            retryButton.addEventListener('click', initAudioSystem);
+            await initAudioSystem();
         });
     </script>
 </head>

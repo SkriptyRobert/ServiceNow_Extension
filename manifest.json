@@ -7,7 +7,9 @@
     "storage",
     "notifications",
     "alarms",
-    "tabs"
+    "tabs",
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
     "https://*.service-now.com/*"
@@ -15,7 +17,9 @@
   "content_scripts": [
     {
       "matches": ["https://*.service-now.com/*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_end",
+      "all_frames": true
     }
   ],
   "web_accessible_resources": [{

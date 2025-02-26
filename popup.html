@@ -219,6 +219,50 @@
       text-decoration: underline;
       color: white;
     }
+
+    .radio-group {
+      margin-top: 10px;
+    }
+
+    .radio-label {
+      display: block;
+      margin-bottom: 12px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    .radio-label:hover {
+      background-color: rgba(25, 118, 210, 0.05);
+    }
+
+    .radio-label input[type="radio"] {
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .radio-text {
+      font-weight: bold;
+      color: #1976D2;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .radio-label .hint {
+      display: block;
+      margin-left: 24px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    input[type="radio"] {
+      accent-color: #1976D2;
+    }
+
+    input[type="radio"]:checked + .radio-text {
+      color: #1565C0;
+    }
   </style>
 </head>
 <body>
@@ -243,6 +287,22 @@
       <input type="file" id="customSound" accept=".mp3">
     </div>
     <button id="testSound">Test Sound</button>
+  </div>
+
+  <div class="form-group">
+    <h2>Critical Ticket Notifications</h2>
+    <div class="radio-group">
+      <label class="radio-label">
+        <input type="radio" name="criticalNotifications" value="enabled" checked>
+        <span class="radio-text">Enable Critical Notifications</span>
+        <span class="hint">Shows persistent notifications for critical tickets on all tabs</span>
+      </label>
+      <label class="radio-label">
+        <input type="radio" name="criticalNotifications" value="disabled">
+        <span class="radio-text">Disable Critical Notifications</span>
+        <span class="hint">Only shows standard system notifications</span>
+      </label>
+    </div>
   </div>
 
   <button id="saveSettings">Save Settings</button>

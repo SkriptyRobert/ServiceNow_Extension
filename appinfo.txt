@@ -1,0 +1,44 @@
+1. Základní architektura:
+Aplikace používá architekturu Chrome extension s několika klíčovými komponentami:
+background.js - hlavní "mozek" aplikace běžící na pozadí
+content.js - skript pro interakci s webovou stránkou ServiceNow
+popup.js - ovládání uživatelského rozhraní
+audio.js - správa zvukových notifikací
+Background Script (background.js):
+Hlavní funkce:
+Udržuje stav aplikace a počítá tikety
+Spravuje notifikace a zvuky
+Komunikuje s ostatními částmi aplikace
+Content Script (content.js):
+Injektuje se do ServiceNow stránek
+Monitoruje DOM pro změny v tiketech
+Zobrazuje webové notifikace přímo na stránce
+Příklad kódu:
+Audio System (audio.js):
+Používá Web Audio API pro přehrávání zvuků
+Podporuje vlastní zvuky (custom sounds)
+Hlavní funkce:
+Datový tok:
+6. Klíčové funkce:
+Monitorování tiketů:
+Notifikační systém:
+Správa zvuků:
+Ukládání nastavení:
+Používá chrome.storage.sync pro synchronizaci napříč prohlížeči
+Používá chrome.storage.local pro lokální data (např. custom zvuky)
+Bezpečnostní prvky:
+Kontrola velikosti souborů
+Validace audio formátů
+Ošetření chyb při načítání
+Retry mechanismy při selhání
+9. Optimalizace:
+Cachování dat
+Efektivní DOM manipulace
+Správa paměti pro audio
+Inteligentní správa tabů
+Toto je základní přehled fungování aplikace. Pokud by se někdo ptal, můžete vysvětlit, že jde o sofistikovaný monitorovací systém, který:
+1. Pravidelně kontroluje ServiceNow frontu
+Detekuje nové tikety
+Poskytuje okamžitou notifikaci různými kanály
+Má pokročilý systém pro správu zvuků
+Inteligentně pracuje s kritickými tikety

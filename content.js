@@ -10,13 +10,11 @@ const CONFIG = {
     INITIAL_RETRY_INTERVAL: 1000,
     MAX_RETRY_ATTEMPTS: 5,
     SELECTORS: {
-        TICKET_TABLE: 'table.list_table, div.list2_body, table[id^="task_table"], table.list_table_all, div[class*="list2-table"]',
-        TICKET_ROWS: 'tr.list_row, tr[data-type="list2_row"], tr.list_row_select, tr[data-list-row="true"], tr[record_class], tr[sys_id]',
-        TICKET_LINK: 'a.linked, a[href*="task.do"], a[href*="incident.do"], a[href*="sc_req_item.do"], a[href*="sc_request.do"]',
-        REFRESH_BUTTON: 'button[id*="refresh"], a[id*="refresh"], button.list_refresh_button, button[name="refresh"]',
-        FRAME_CONTAINER: 'gsft_main'
+        TICKET_TABLE: 'table.list_table',
+        TICKET_ROWS: 'tr.list_row',
+        TICKET_LINK: 'a.linked'
     },
-    TICKET_PATTERN: /^(INC|TASK|RITM|REQ|FTASK|SCTASK)[0-9]+$/i
+    TICKET_PATTERN: /^(INC|ITASK|TASK|RITM|REQ|FTASK|SCTASK|PRB|CHG|PRBTASK|CTASK|PTASK)[0-9]+$/i
 };
 
 // Pomocné funkce
@@ -28,297 +26,65 @@ function error(message, ...args) {
     console.error(`[ServiceNow Monitor] ${message}`, ...args);
 }
 
-function debugDOM() {
-    log('Debug DOM struktura:');
-    log('Hledám tabulku:', CONFIG.SELECTORS.TICKET_TABLE);
-    const tables = document.querySelectorAll(CONFIG.SELECTORS.TICKET_TABLE);
-    log(`Nalezeno ${tables.length} tabulek`);
-    
-    tables.forEach((table, index) => {
-        log(`Tabulka ${index + 1}:`, table);
-        const rows = table.querySelectorAll(CONFIG.SELECTORS.TICKET_ROWS);
-        log(`- Počet řádků: ${rows.length}`);
-        
-        rows.forEach((row, rowIndex) => {
-            const links = row.querySelectorAll(CONFIG.SELECTORS.TICKET_LINK);
-            if (links.length > 0) {
-                links.forEach(link => {
-                    log(`-- Řádek ${rowIndex + 1}, Tiket: ${link.textContent.trim()}`);
-                });
-            }
-        });
-    });
-}
-
 // Načtení nastavení
 async function loadSettings() {
     try {
         const result = await chrome.storage.sync.get(['monitorUrl']);
         monitoredUrl = result.monitorUrl || '';
-        console.log('Loaded monitored URL:', monitoredUrl);
+        log('Načtena monitorovaná URL:', monitoredUrl);
     } catch (error) {
-        console.error('Error loading settings:', error);
+        error('Chyba při načítání nastavení:', error);
     }
 }
 
-// Kontrola, zda sledovat aktuální stránku
-function shouldMonitorPage() {
-    log('Kontrola URL:', window.location.href);
-    if (!monitoredUrl) {
-        log('Není nastavena monitorovaná URL');
-        return false;
-    }
-    
+// Získání tiketů
+function getTickets() {
+    const tickets = new Set();
     try {
+        const tables = document.querySelectorAll(CONFIG.SELECTORS.TICKET_TABLE);
+        tables.forEach(table => {
+            const rows = table.querySelectorAll(CONFIG.SELECTORS.TICKET_ROWS);
+            rows.forEach(row => {
+                const link = row.querySelector(CONFIG.SELECTORS.TICKET_LINK);
+                if (link) {
+                    const number = link.textContent.trim();
+                    if (CONFIG.TICKET_PATTERN.test(number)) {
+                        tickets.add(number);
+                        log(`Nalezen tiket: ${number}`);
+                    }
+                }
+            });
+        });
+    } catch (err) {
+        error('Chyba při získávání tiketů:', err);
+    }
+    return tickets;
+}
+
+// Kontrola, zda jsme na správné URL
+function shouldMonitorPage() {
+    try {
+        if (!monitoredUrl) {
+            return false;
+        }
+
         const currentUrl = new URL(window.location.href);
         const targetUrl = new URL(monitoredUrl);
 
-        log('Aktuální URL:', currentUrl.toString());
-        log('Cílová URL:', targetUrl.toString());
-
-        // Kontrola základních částí URL - volnější podmínky
-        if (currentUrl.hostname !== targetUrl.hostname) {
-            log('Neshoduje se hostname');
-            return false;
-        }
-
-        // Kontrola, zda jsme na správné stránce
-        if (!currentUrl.pathname.includes('task_list.do') && 
-            !currentUrl.pathname.includes('incident_list.do') && 
-            !currentUrl.pathname.includes('sc_req_item_list.do')) {
-            log('Nejsme na správné stránce');
-            return false;
-        }
-
-        log('Stránka je validní pro monitoring');
-        return true;
+        // Kontrola, zda jsme na stejné doméně a cestě
+        return currentUrl.origin === targetUrl.origin &&
+               currentUrl.pathname === targetUrl.pathname &&
+               currentUrl.search === targetUrl.search;
     } catch (error) {
         error('Chyba při kontrole URL:', error);
         return false;
     }
 }
 
-// Funkce pro získání ServiceNow kontextu
-function getServiceNowContext() {
-    try {
-        const frame = document.getElementById(CONFIG.SELECTORS.FRAME_CONTAINER);
-        if (frame && frame.contentWindow) {
-            const win = frame.contentWindow;
-            return {
-                window: win,
-                document: win.document,
-                g_list: win.g_list,
-                GlideList2: win.GlideList2,
-                jQuery: win.jQuery
-            };
-        }
-    } catch (err) {
-        log('Nelze získat ServiceNow kontext, používám hlavní okno');
-    }
-    return {
-        window: window,
-        document: document,
-        g_list: window.g_list,
-        GlideList2: window.GlideList2,
-        jQuery: window.jQuery
-    };
-}
-
-// Funkce pro získání aktuálního seznamu tiketů
-function getListObject() {
-    const context = getServiceNowContext();
-    try {
-        // Zkusíme získat objekt seznamu různými způsoby
-        if (context.g_list) {
-            return context.g_list;
-        }
-        
-        if (context.GlideList2) {
-            const listId = context.document.querySelector('[data-list_id]')?.getAttribute('data-list_id');
-            if (listId) {
-                return context.GlideList2.get(listId);
-            }
-        }
-    } catch (err) {
-        error('Chyba při získávání objektu seznamu:', err);
-    }
-    return null;
-}
-
-// funkce GlideList2 objektu
-function getGlideList2() {
-    const context = getServiceNowContext();
-    try {
-        if (context.GlideList2) {
-            //ID seznamu různými způsoby
-            const listId = context.document.querySelector('[data-list_id]')?.getAttribute('data-list_id') ||
-                          context.document.querySelector('.list_div')?.getAttribute('id') ||
-                          context.document.querySelector('div[data-type="list2_container"]')?.getAttribute('id');
-            
-            if (listId) {
-                return context.GlideList2.get(listId);
-            }
-            
-            // ID or zkusíme najít první instanci
-            const lists = context.GlideList2.getAll();
-            if (lists && lists.length > 0) {
-                return lists[0];
-            }
-        }
-    } catch (err) {
-        error('Chyba při získávání GlideList2:', err);
-    }
-    return null;
-}
-
-// Vylepšená funkce pro kontrolu platnosti kontextu
-function isExtensionContextValid() {
-    try {
-        // Kontrola přístupu k chrome API
-        if (!chrome || !chrome.runtime || !chrome.runtime.id) {
-            return false;
-        }
-        
-        // Kontrola, zda jsme na správné stránce
-        if (!shouldMonitorPage()) {
-            return false;
-        }
-        
-        // Kontrola, zda máme přístup k DOM
-        if (!document || !document.body) {
-            return false;
-        }
-        
-        return true;
-    } catch (e) {
-        error('Chyba při kontrole kontextu:', e);
-        return false;
-    }
-}
-
-// funkce pro aktualizaci dat
-async function refreshListData() {
-    const context = getServiceNowContext();
-    try {
-        // GlideList2, pokud je dostupný
-        const list2 = getGlideList2();
-        if (list2 && typeof list2.refresh === 'function') {
-            log('Aktualizuji data pomocí GlideList2');
-            list2.refresh();
-            return true;
-        }
-
-        // GlideList2 není dostupný, použijeme AJAX
-        if (context.jQuery) {
-            log('Aktualizuji data pomocí AJAX');
-            const currentUrl = new URL(context.window.location.href);
-            await context.jQuery.ajax({
-                url: currentUrl.pathname + currentUrl.search,
-                method: 'GET',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'X-UserToken': context.window.g_ck || '',
-                },
-                data: {
-                    sysparm_refresh: true,
-                    sysparm_timestamp: Date.now()
-                }
-            });
-            return true;
-        }
-
-        return false;
-    } catch (err) {
-        error('Chyba při aktualizaci dat:', err);
-        return false;
-    }
-}
-
-// funkce pro zpracování změn
-function handleChanges() {
-    if (!isExtensionContextValid()) {
-        error('Neplatný kontext extension');
-        return;
-    }
-
-    if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-    }
-    
-    debounceTimeout = setTimeout(async () => {
-        if (!isProcessing) {
-            isProcessing = true;
-            try {
-                const refreshSuccess = await refreshListData();
-                if (refreshSuccess) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    await checkForNewTickets(false);
-                }
-            } catch (e) {
-                error('Chyba při zpracování změn:', e);
-                // Pokud je kontext neplatný, restartujeme monitoring
-                if (!isExtensionContextValid()) {
-                    isInitialized = false;
-                    startMonitoring();
-                }
-            } finally {
-                isProcessing = false;
-            }
-        }
-    }, 300);
-}
-
-function getTickets() {
-    const context = getServiceNowContext();
-    const tickets = new Set();
-    
-    try {
-        // data přímo ze seznamu
-        const list = getListObject();
-        if (list) {
-            const rows = list.getRows();
-            if (rows) {
-                rows.forEach(row => {
-                    const number = row.getAttribute('data-number') || 
-                                 row.querySelector('.list_decoration a, .linked')?.textContent?.trim();
-                    if (number && CONFIG.TICKET_PATTERN.test(number)) {
-                        tickets.add(number);
-                        log(`Přidán tiket ze seznamu: ${number}`);
-                    }
-                });
-            }
-        }
-
-        // Pokud nemáme data ze seznamu, použijeme DOM
-        if (tickets.size === 0) {
-            const tables = context.document.querySelectorAll(CONFIG.SELECTORS.TICKET_TABLE);
-            tables.forEach((table, tableIndex) => {
-                const rows = table.querySelectorAll(CONFIG.SELECTORS.TICKET_ROWS);
-                rows.forEach((row, rowIndex) => {
-                    const ticketLinks = row.querySelectorAll(CONFIG.SELECTORS.TICKET_LINK);
-                    ticketLinks.forEach(link => {
-                        const ticketText = link.textContent.trim();
-                        if (CONFIG.TICKET_PATTERN.test(ticketText)) {
-                            tickets.add(ticketText);
-                            log(`Přidán tiket z DOM: ${ticketText}`);
-                        }
-                    });
-                });
-            });
-        }
-
-        log(`Celkový počet nalezených tiketů: ${tickets.size}`);
-        return tickets;
-    } catch (err) {
-        error('Chyba při získávání tiketů:', err);
-        return new Set();
-    }
-}
-
-// kontrola nových tiketů
-async function checkForNewTickets(forceRefreshData = false) {
-    if (!isExtensionContextValid()) {
-        error('Neplatný kontext extension při kontrole tiketů');
+// Kontrola nových tiketů
+async function checkForNewTickets() {
+    // Kontrola, zda jsme na správné stránce
+    if (!shouldMonitorPage()) {
         return;
     }
 
@@ -326,33 +92,14 @@ async function checkForNewTickets(forceRefreshData = false) {
         const currentTickets = getTickets();
         const currentCount = currentTickets.size;
 
-        if (currentCount === 0) {
-            log('Žádné tikety nenalezeny, možná je potřeba obnovit session');
-            return;
-        }
-
         log(`Aktuální počet tiketů: ${currentCount}`);
         log('Poslední známý počet:', lastTicketCount);
 
-        // Aktualizovat badge pouze pokud je kontext platný
-        try {
-            await chrome.runtime.sendMessage({
-                type: 'updateBadge',
-                count: currentCount
-            });
-        } catch (e) {
-            error('Nelze aktualizovat badge:', e);
-            // Pokud je kontext neplatný, restartujeme monitoring
-            if (!isExtensionContextValid()) {
-                isInitialized = false;
-                startMonitoring();
-            }
-            return;
-        }
-
         // Kontrola nových tiketů
         if (lastTicketCount > 0 && currentCount > lastTicketCount) {
-            const newTickets = [...currentTickets].filter(id => !lastTicketIds.has(id));
+            const newTickets = Array.from(currentTickets)
+                .filter(number => !lastTicketIds.has(number));
+
             if (newTickets.length > 0) {
                 log('Nové tikety:', newTickets);
                 try {
@@ -371,165 +118,330 @@ async function checkForNewTickets(forceRefreshData = false) {
 
     } catch (err) {
         error('Chyba při kontrole tiketů:', err);
-        if (!isExtensionContextValid()) {
-            isInitialized = false;
-            startMonitoring();
-        }
     }
 }
 
-// Upravená inicializace sledování změn
-function initializeObserver() {
-    const context = getServiceNowContext();
-    let isProcessing = false;
-
-    // Funkce pro zpracování změn s debounce
-    let debounceTimeout = null;
-    function handleChanges() {
-        if (debounceTimeout) {
-            clearTimeout(debounceTimeout);
-        }
-        debounceTimeout = setTimeout(async () => {
-            if (!isProcessing) {
-                isProcessing = true;
-                await refreshListData();  // Nejdřív aktualizujeme data
-                await checkForNewTickets(false);
-                isProcessing = false;
-            }
-        }, 300);
-    }
-
-    // Sledování ServiceNow událostí
-    if (context.jQuery) {
-        const events = [
-            'glide:list.loaded',
-            'glide:list.refresh',
-            'glide:list_v2.loaded',
-            'glide:list_v2.refresh',
-            'list.loaded',
-            'partial.page.reload',
-            'list.refresh'
-        ];
-        
-        events.forEach(event => {
-            context.jQuery(context.document).on(event, () => {
-                log(`Detekována událost: ${event}`);
-                handleChanges();
-            });
-        });
-
-        // Sledování AJAX požadavků
-        context.jQuery(context.document).ajaxComplete((event, xhr, settings) => {
-            if (settings.url && (
-                settings.url.includes('ajax.do') || 
-                settings.url.includes('list.do') ||
-                settings.url.includes('task_list.do')
-            )) {
-                log('Detekován relevantní AJAX požadavek');
-                handleChanges();
-            }
-        });
-    }
-
-    // Nastavení MutationObserver pro záložní detekci změn
-    if (observer) {
-        observer.disconnect();
-    }
-
-    observer = new MutationObserver((mutations) => {
-        const hasRelevantChanges = mutations.some(mutation => {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                return Array.from(mutation.addedNodes).some(node => {
-                    return node.nodeType === 1 && (
-                        node.matches?.(CONFIG.SELECTORS.TICKET_ROWS) ||
-                        node.querySelector?.(CONFIG.SELECTORS.TICKET_LINK)
-                    );
-                });
-            }
-            return false;
-        });
-
-        if (hasRelevantChanges) {
-            log('Detekována změna v DOM');
-            handleChanges();
-        }
-    });
-
-    // relevantní části DOM
-    const tables = context.document.querySelectorAll(CONFIG.SELECTORS.TICKET_TABLE);
-    tables.forEach(table => {
-        observer.observe(table, {
-            childList: true,
-            subtree: true,
-            attributes: false
-        });
-    });
-
-    // Počáteční kontrola
-    checkForNewTickets(true);
-    
-    // Interval pro kontrolu
-    setInterval(() => {
-        if (!isProcessing) {
-            handleChanges();
-        }
-    }, CONFIG.REFRESH_INTERVAL);
-}
-
-// Upravený start monitorování
+// Start monitorování
 async function startMonitoring() {
     if (isInitialized) {
-        log('Monitoring je již inicializován');
         return;
     }
-    
+
     log('Spouštím monitoring');
+    await loadSettings();
+
+    // Kontrola, zda jsme na správné stránce před spuštěním monitorování
+    if (!shouldMonitorPage()) {
+        log('Tato stránka není cílem monitoringu');
+        return;
+    }
+
+    // Interval pro kontrolu
+    setInterval(() => {
+        checkForNewTickets();
+    }, CONFIG.REFRESH_INTERVAL);
+
+    isInitialized = true;
     
+    // První kontrola
+    checkForNewTickets();
+}
+
+// Spustit monitoring při načtení stránky
+startMonitoring();
+
+// Funkce pro vytvoření webové notifikace
+function showWebNotification(ticketDetails) {
     try {
-        const result = await chrome.storage.sync.get(['monitorUrl']);
-        monitoredUrl = result.monitorUrl || '';
-        log('Načtena monitorovaná URL:', monitoredUrl);
-
-        if (!monitoredUrl) {
-            error('Není nastavena URL pro monitoring');
-            return;
+        // Nejprve zkontrolujeme, zda již neexistuje notifikace pro tento tiket
+        const existingNotification = document.querySelector(`.snq-notification[data-ticket="${ticketDetails.number}"]`);
+        if (existingNotification) {
+            return; // Pokud již existuje, nevytváříme novou
         }
 
-        if (!shouldMonitorPage()) {
-            log('Tato stránka není cílem monitoringu');
-            return;
+        const container = document.createElement('div');
+        container.className = 'snq-notification';
+        container.setAttribute('data-ticket', ticketDetails.number);
+        container.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(211, 47, 47, 0.4),
+                       0 0 0 1px rgba(255, 255, 255, 0.1);
+            z-index: 999999;
+            width: 320px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            animation: slideIn 0.5s ease-out, pulse 2s infinite;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform-origin: bottom right;
+        `;
+
+        // Přidáme styl pro animaci
+        if (!document.getElementById('snq-notification-style')) {
+            const style = document.createElement('style');
+            style.id = 'snq-notification-style';
+            style.textContent = `
+                @keyframes slideIn {
+                    from { 
+                        transform: translateX(100%) scale(0.8); 
+                        opacity: 0; 
+                    }
+                    to { 
+                        transform: translateX(0) scale(1); 
+                        opacity: 1; 
+                    }
+                }
+                @keyframes pulse {
+                    0% { 
+                        box-shadow: 0 6px 16px rgba(211, 47, 47, 0.4),
+                                  0 0 0 1px rgba(255, 255, 255, 0.1);
+                    }
+                    50% { 
+                        box-shadow: 0 8px 24px rgba(211, 47, 47, 0.6),
+                                  0 0 0 1px rgba(255, 255, 255, 0.2);
+                    }
+                    100% { 
+                        box-shadow: 0 6px 16px rgba(211, 47, 47, 0.4),
+                                  0 0 0 1px rgba(255, 255, 255, 0.1);
+                    }
+                }
+                .snq-notification {
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .snq-notification.hiding {
+                    transform: translateX(100%) scale(0.8);
+                    opacity: 0;
+                }
+                .snq-notification:hover {
+                    transform: translateY(-2px) scale(1.02);
+                }
+            `;
+            document.head.appendChild(style);
         }
 
-        initializeObserver();
+        // Vytvoříme obsah notifikace
+        const title = document.createElement('div');
+        title.style.cssText = `
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #ffcdd2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            letter-spacing: 0.3px;
+        `;
 
-        isInitialized = true;
-        log('Monitoring úspěšně inicializován');
-        
-        // Okamžitá první kontrola
-        await refreshListData();
-        await checkForNewTickets(true);
-    } catch (err) {
-        error('Chyba při startu monitoringu:', err);
-        isInitialized = false;
+        // Přidáme ikonu výstrahy
+        const warningIcon = document.createElement('span');
+        warningIcon.textContent = '⚠️';
+        warningIcon.style.cssText = `
+            font-size: 22px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        `;
+        title.appendChild(warningIcon);
+
+        const titleText = document.createElement('span');
+        titleText.textContent = `CRITICAL TICKET: ${ticketDetails.number}`;
+        title.appendChild(titleText);
+
+        const content = document.createElement('div');
+        content.style.cssText = `
+            font-size: 14px;
+            line-height: 1.5;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+        `;
+
+        // Sestavíme obsah zprávy
+        let messageContent = '';
+        if (ticketDetails.state) messageContent += `Status: ${ticketDetails.state}\n`;
+        if (ticketDetails.assignedTo) messageContent += `Assigned to: ${ticketDetails.assignedTo}\n`;
+        if (ticketDetails.shortDescription) {
+            const maxLength = 100;
+            messageContent += `Description: ${ticketDetails.shortDescription.length > maxLength 
+                ? ticketDetails.shortDescription.substring(0, maxLength) + '...'
+                : ticketDetails.shortDescription}`;
+        }
+
+        content.textContent = messageContent;
+
+        // Přidáme tlačítka pro otevření tiketu a zavření notifikace
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        `;
+
+        const openButton = document.createElement('button');
+        openButton.textContent = 'Open Critical Ticket';
+        openButton.style.cssText = `
+            background: linear-gradient(135deg, #ff5252, #ff1744);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            flex: 2;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        `;
+        openButton.onmouseover = () => {
+            openButton.style.transform = 'translateY(-2px)';
+            openButton.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+        };
+        openButton.onmouseout = () => {
+            openButton.style.transform = 'translateY(0)';
+            openButton.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
+        };
+
+        const closeButton = document.createElement('button');
+        closeButton.textContent = 'Close';
+        closeButton.style.cssText = `
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            flex: 1;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        `;
+        closeButton.onmouseover = () => {
+            closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
+            closeButton.style.transform = 'translateY(-2px)';
+        };
+        closeButton.onmouseout = () => {
+            closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+            closeButton.style.transform = 'translateY(0)';
+        };
+
+        // Sestavíme notifikaci
+        container.appendChild(title);
+        container.appendChild(content);
+        buttonContainer.appendChild(openButton);
+        buttonContainer.appendChild(closeButton);
+        container.appendChild(buttonContainer);
+        document.body.appendChild(container);
+
+        // Přidáme zvukový efekt pro kritický tiket - zkrácený na 4s
+        const audio = new Audio(chrome.runtime.getURL('sounds/notification.mp3'));
+        audio.volume = 1.0;
+        let startTime = 0;
+        audio.addEventListener('timeupdate', () => {
+            if (audio.currentTime - startTime >= 4) {
+                audio.pause();
+            }
+        });
+        audio.play().catch(err => console.log('Audio play failed:', err));
+
+        // Přidáme funkcionalitu tlačítek
+        openButton.onclick = () => {
+            // Určení typu tiketu podle prefixu
+            const prefix = ticketDetails.number.substring(0, 3).toUpperCase();
+            let table;
+            
+            switch (prefix) {
+                case 'INC': // Incident
+                    if (ticketDetails.number.includes('TASK')) {
+                        table = 'incident_task';
+                    } else {
+                        table = 'incident';
+                    }
+                    break;
+                case 'ITA': // ITASK
+                    table = 'incident_task';
+                    break;
+                case 'RIT': // Request Item
+                    table = 'sc_req_item';
+                    break;
+                case 'REQ': // Request
+                    table = 'sc_request';
+                    break;
+                case 'FTA': // Facilities Task
+                    table = 'facilities_task';
+                    break;
+                case 'SCT': // Service Catalog Task
+                    table = 'sc_task';
+                    break;
+                case 'CTA': // Change Task
+                    table = 'change_task';
+                    break;
+                case 'CHG': // Change Request
+                    table = 'change_request';
+                    break;
+                case 'PRB': // Problem
+                    table = 'problem';
+                    break;
+                case 'PRT': // Problem Task
+                    table = 'problem_task';
+                    break;
+                case 'TAS': // Task
+                    table = 'task';
+                    break;
+                case 'CTS': // Change Task
+                    table = 'change_task';
+                    break;
+                case 'SRT': // Service Request Task
+                    table = 'sc_task';
+                    break;
+                default:
+                    table = 'task';
+            }
+
+            const ticketUrl = `${window.location.origin}/${table}.do?sysparm_query=number=${ticketDetails.number}&sysparm_view=1`;
+            window.open(ticketUrl, '_blank');
+            container.remove();
+        };
+
+        closeButton.onclick = () => {
+            container.classList.add('hiding');
+            setTimeout(() => container.remove(), 300);
+        };
+
+    } catch (error) {
+        console.error('Error creating web notification:', error);
     }
 }
 
-// Posluchač pro změny nastavení
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync' && changes.monitorUrl) {
-        monitoredUrl = changes.monitorUrl.newValue;
-        if (monitoredUrl) {
-            startMonitoring();
-        }
+// Přidáme posluchač pro zprávy od background scriptu
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Content script received message:', message);
+    if (message.type === 'showWebNotification') {
+        console.log('Showing web notification for ticket:', message.ticketDetails);
+        showWebNotification(message.ticketDetails);
+        // Potvrdíme background scriptu, že notifikace byla zobrazena
+        sendResponse({ success: true });
     }
+    return true; // Indikuje asynchronní odpověď
 });
 
-// Cleanup
-window.addEventListener('unload', () => {
-    if (observer) {
-        observer.disconnect();
-    }
+// Oznámíme background scriptu, že content script je připraven
+chrome.runtime.sendMessage({ type: 'contentScriptReady' }, response => {
+    console.log('Content script ready message sent');
 });
 
-// Spustit monitoring při načtení stránky
-startMonitoring(); 
+console.log('ServiceNow Queue Monitor content script loaded'); 
